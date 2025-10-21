@@ -1,0 +1,54 @@
+﻿@page
+@model CB_Zad1.Pages.Admin.AddUserModel
+@{
+    ViewData["Title"] = "Dodaj Użytkownika";
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>Tworzenie nowego konta użytkownika z hasłem tymczasowym.</p>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form id="registerForm" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="Input.FullName" class="form-control" />
+                <label asp-for="Input.FullName">Pełna nazwa</label>
+                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Login" class="form-control" />
+                <label asp-for="Input.Login">Login (UserName)</label>
+                <span asp-validation-for="Input.Login" class="text-danger"></span>
+            </div>
+
+            <div classs="form-floating mb-3">
+                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                <label asp-for="Input.Email">Email</label>
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="hasło" />
+                <label asp-for="Input.Password">Hasło</label>
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="potwierdź hasło" />
+                <label asp-for="Input.ConfirmPassword">Potwierdź hasło</label>
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Utwórz konto</button>
+            <a asp-page="./UserList" class="btn btn-secondary mt-2">Anuluj</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

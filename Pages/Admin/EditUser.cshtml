@@ -1,0 +1,68 @@
+﻿@page "{id}"
+@model CB_Zad1.Pages.Admin.EditUserModel
+@{
+    ViewData["Title"] = "Edycja Użytkownika";
+}
+
+<h1>@ViewData["Title"]: @Model.TargetUser.UserName</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <input type="hidden" asp-for="Input.UserId" />
+
+            <div class="form-floating mb-3">
+                <input asp-for="Input.FullName" class="form-control" />
+                <label asp-for="Input.FullName">Pełna nazwa</label>
+                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="Input.PasswordExpiresInDays" class="form-control" type="number" />
+                <label asp-for="Input.PasswordExpiresInDays">Ważność hasła (w dniach)</label>
+                <span class="text-muted">Zostaw puste, aby usunąć datę wygaśnięcia.</span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Input.IsBlocked" class="form-check-input" />
+                <label asp-for="Input.IsBlocked" class="form-check-label">Konto zablokowane</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Input.PasswordRestrictionsEnabled" class="form-check-input" />
+                <label asp-for="Input.PasswordRestrictionsEnabled" class="form-check-label">Wymagaj silnego hasła</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+            <a asp-page="./UserList" class="btn btn-secondary">Anuluj</a>
+        </form>
+    </div>
+
+    <div class="col-md-6 border-start">
+        <h5>Akcje dla tego użytkownika</h5>
+
+        <form method="post" asp-page-handler="ResetPassword" class="mt-3">
+
+            <input type="hidden" asp-for="Input.UserId"/>
+
+            <p>Wymusi zmianę hasła na "Temp123!" i ustawi flagę zmiany przy logowaniu.</p>
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Czy na pewno chcesz zresetować hasło?')">
+                Resetuj Hasło
+            </button>
+        </form>
+        
+        <form method="post" asp-page-handler="Delete" class="mt-3">
+    
+            <input type="hidden" asp-for="Input.UserId" /> 
+    
+            <p class="text-danger">Tej operacji nie można cofnąć.</p>
+            <button type="submit" class="btn btn-danger" 
+                    onclick="return confirm('Czy na pewno chcesz usunąć tego użytkownika?')">
+                Usuń Użytkownika
+            </button>
+        </form>
+    </div>
+</div>

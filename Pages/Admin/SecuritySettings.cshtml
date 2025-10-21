@@ -1,0 +1,60 @@
+﻿@page
+@model CB_Zad1.Pages.Admin.SecuritySettingsModel
+@{
+    ViewData["Title"] = "Globalne Ustawienia Bezpieczeństwa";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<div classj="row">
+    <div class="col-md-8">
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">Informacja</h4>
+            <p>
+                Poniższe ustawienia są globalną polityką haseł dla całej aplikacji.
+            </p>
+            <hr>
+            <p class="mb-0">
+                Są one ustawiane podczas startu aplikacji (w pliku <code>Program.cs</code>) i <strong>nie mogą być zmienione</strong> w trakcie jej działania.
+                Ta strona służy wyłącznie do podglądu aktualnej konfiguracji.
+            </p>
+        </div>
+
+        <form>
+            <fieldset disabled>
+                <div class="form-floating mb-3">
+                    <input asp-for="Policy.RequiredLength" class="form-control" type="number" />
+                    <label asp-for="Policy.RequiredLength">Minimalna długość hasła</label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="Policy.RequireDigit" class="form-check-input" type="checkbox" />
+                    <label asp-for="Policy.RequireDigit" class="form-check-label">Wymagaj cyfry</label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="Policy.RequireLowercase" class="form-check-input" type="checkbox" />
+                    <label asp-for="Policy.RequireLowercase" class="form-check-label">Wymagaj małej litery</label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="Policy.RequireUppercase" class="form-check-input" type="checkbox" />
+                    <label asp-for="Policy.RequireUppercase" class="form-check-label">Wymagaj wielkiej litery</label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="Policy.RequireNonAlphanumeric" class="form-check-input" type="checkbox" />
+                    <label asp-for="Policy.RequireNonAlphanumeric" class="form-check-label">Wymagaj znaku specjalnego</label>
+                </div>
+            </fieldset>
+        </form>
+
+        <h3 class="mt-5">Ustawienia dynamiczne</h3>
+        <p>
+            Możliwość ustawienia <strong>daty ważności hasła</strong> (Req 2.h) oraz
+            <strong>włączenia/wyłączenia</strong> tych ograniczeń dla wybranego konta (Req 2.g)
+            jest dostępna w panelu "Zarządzanie Użytkownikami" -> "Edytuj" dla każdego użytkownika.
+        </p>
+    </div>
+</div>
