@@ -10,4 +10,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
         : base(options)
     {
     }
+
+    public DbSet<UserActivity> UserActivities { get; set; }
+    public DbSet<SystemSettings> SystemSettings { get; set; }
 }

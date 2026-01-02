@@ -2,7 +2,7 @@
 @model LoginModel
 
 @{
-    ViewData["Title"] = "Log in";
+    ViewData["Title"] = "Logowanie";
 }
 
 <h1>@ViewData["Title"]</h1>
@@ -10,18 +10,39 @@
     <div class="col-md-4">
         <section>
             <form id="account" method="post">
-                <h2>Use a local account to log in.</h2>
+                <h2>Logowanie do aplikacji</h2>
                 <hr />
                 <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
                 <div class="form-floating mb-3">
                     <input asp-for="Input.Login" class="form-control" autocomplete="username" aria-required="true" placeholder="login" />
-                    <label asp-for="Input.Login" class="form-label">Login</label>
+                    <label asp-for="Input.Login" class="form-label">Użytkownik</label>
                     <span asp-validation-for="Input.Login" class="text-danger"></span>
                 </div>
+
                 <div class="form-floating mb-3">
                     <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label asp-for="Input.Password" class="form-label">Password</label>
+                    <label asp-for="Input.Password" class="form-label">Hasło</label>
                     <span asp-validation-for="Input.Password" class="text-danger"></span>
+                </div>
+
+                <div class="card mb-3 border-primary">
+                    <div class="card-body bg-light">
+                        <h5 class="card-title text-primary" style="font-size: 1rem;">Jednorazowe hasło</h5>
+                        <p class="card-text mb-1">
+                            Wzór: <code>exp(-a * x)</code>
+                        </p>
+                        <p class="card-text">
+                            <strong>x = @Model.ChallengeX</strong><br />
+                            <strong>a = @Model.ChallengeA</strong>
+                        </p>
+
+                        <div class="form-floating">
+                            <input asp-for="Input.MathResult" class="form-control" autocomplete="off" placeholder="Wynik" />
+                            <label asp-for="Input.MathResult">Wpisz wynik y</label>
+                            <span asp-validation-for="Input.MathResult" class="text-danger"></span>
+                        </div>
+                    </div>
                 </div>
                 <div class="checkbox mb-3">
                     <label asp-for="Input.RememberMe" class="form-label">
@@ -30,33 +51,30 @@
                     </label>
                 </div>
                 <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Zaloguj</button>
                 </div>
                 <div>
-                    <p>
-                        <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
+                    <p class="mt-2">
+                        <a id="forgot-password" asp-page="./ForgotPassword">Zapomniałeś hasła?</a>
                     </p>
                     <p>
-                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
+                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Rejestracja nowego użytkownika</a>
                     </p>
                 </div>
             </form>
         </section>
     </div>
+
     <div class="col-md-6 col-md-offset-2">
         <section>
-            <h3>Use another service to log in.</h3>
+            <h3>Użyj innego serwisu do logowania.</h3>
             <hr />
             @{
                 if ((Model.ExternalLogins?.Count ?? 0) == 0)
                 {
                     <div>
                         <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
+                            There are no external authentication services configured.
                         </p>
                     </div>
                 }

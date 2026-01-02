@@ -1,68 +1,98 @@
 ﻿@page "{id}"
 @model CB_Zad1.Pages.Admin.EditUserModel
 @{
-    ViewData["Title"] = "Edycja Użytkownika";
+    ViewData["Title"] = "Profil użytkownika";
 }
 
-<h1>@ViewData["Title"]: @Model.TargetUser.UserName</h1>
-<hr />
-
-<div class="row">
-    <div class="col-md-6">
-        <form method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <input type="hidden" asp-for="Input.UserId" />
-
-            <div class="form-floating mb-3">
-                <input asp-for="Input.FullName" class="form-control" />
-                <label asp-for="Input.FullName">Pełna nazwa</label>
-                <span asp-validation-for="Input.FullName" class="text-danger"></span>
-            </div>
-
-            <div class="form-floating mb-3">
-                <input asp-for="Input.PasswordExpiresInDays" class="form-control" type="number" />
-                <label asp-for="Input.PasswordExpiresInDays">Ważność hasła (w dniach)</label>
-                <span class="text-muted">Zostaw puste, aby usunąć datę wygaśnięcia.</span>
-            </div>
-
-            <div class="form-check mb-3">
-                <input asp-for="Input.IsBlocked" class="form-check-input" />
-                <label asp-for="Input.IsBlocked" class="form-check-label">Konto zablokowane</label>
-            </div>
-
-            <div class="form-check mb-3">
-                <input asp-for="Input.PasswordRestrictionsEnabled" class="form-check-input" />
-                <label asp-for="Input.PasswordRestrictionsEnabled" class="form-check-label">Wymagaj silnego hasła</label>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
-            <a asp-page="./UserList" class="btn btn-secondary">Anuluj</a>
-        </form>
-    </div>
-
-    <div class="col-md-6 border-start">
-        <h5>Akcje dla tego użytkownika</h5>
-
-        <form method="post" asp-page-handler="ResetPassword" class="mt-3">
-
-            <input type="hidden" asp-for="Input.UserId"/>
-
-            <p>Wymusi zmianę hasła na "Temp123!" i ustawi flagę zmiany przy logowaniu.</p>
-            <button type="submit" class="btn btn-warning" onclick="return confirm('Czy na pewno chcesz zresetować hasło?')">
-                Resetuj Hasło
-            </button>
-        </form>
-        
-        <form method="post" asp-page-handler="Delete" class="mt-3">
-    
-            <input type="hidden" asp-for="Input.UserId" /> 
-    
-            <p class="text-danger">Tej operacji nie można cofnąć.</p>
-            <button type="submit" class="btn btn-danger" 
-                    onclick="return confirm('Czy na pewno chcesz usunąć tego użytkownika?')">
-                Usuń Użytkownika
-            </button>
-        </form>
-    </div>
+<div class="bg-primary text-white p-2 mb-3 rounded-top" style="background-color: #6f42c1 !important;">
+    <h3 class="m-0">@ViewData["Title"]</h3>
 </div>
+
+@if (TempData["GeneratedPasswordMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>@TempData["GeneratedPasswordMessage"]</strong>
+        <p class="mb-0 small">Przekaż to hasło użytkownikowi.</p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Input.UserId" />
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="mb-3 row">
+                <label asp-for="Input.UserName" class="col-sm-3 col-form-label fw-bold">Login</label>
+                <div class="col-sm-9">
+                    <input asp-for="Input.UserName" class="form-control" readonly style="background-color: #e9ecef;" />
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <label asp-for="Input.Email" class="col-sm-3 col-form-label">E-mail</label>
+                <div class="col-sm-9">
+                    <input asp-for="Input.Email" class="form-control" />
+                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <label asp-for="Input.SelectedRole" class="col-sm-3 col-form-label">Typ (Rola)</label>
+                <div class="col-sm-9">
+                    <select asp-for="Input.SelectedRole" asp-items="Model.Roles" class="form-select">
+                        <option value="">-- Brak roli --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <div class="col-sm-3"></div>
+                <div class="col-sm-9">
+                    <div class="form-check">
+                        <input asp-for="Input.IsBlocked" class="form-check-input" />
+                        <label asp-for="Input.IsBlocked" class="form-check-label text-danger fw-bold">Zablokuj dostęp do systemu</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3 row border p-2 mx-0 bg-light rounded">
+                <label class="col-sm-3 col-form-label fw-bold text-primary">Jednorazowe hasło</label>
+                <div class="col-sm-9 d-flex align-items-center">
+                    <button type="submit" asp-page-handler="GenerateOneTimePassword"
+                            class="btn btn-outline-secondary btn-sm me-2"
+                            onclick="return confirm('To zresetuje obecne hasło użytkownika. Kontynuować?');">
+                        Ustaw hasło jednorazowe
+                    </button>
+                    <i class="bi bi-question-circle text-success" title="Wygeneruje losowe hasło zgodne z polityką bezpieczeństwa"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 border-start">
+            <h5 class="text-secondary">Operacje</h5>
+
+            <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-primary bg-purple">
+                    <i class="bi bi-save"></i> Zapisz zmiany
+                </button>
+
+                <a asp-page="./UserList" class="btn btn-outline-secondary">
+                    Anuluj / Powrót
+                </a>
+
+                <hr />
+
+                <button type="submit" asp-page-handler="Delete" class="btn btn-danger mt-3"
+                        onclick="return confirm('Czy na pewno chcesz trwale usunąć tego użytkownika? Tej operacji nie można cofnąć.');">
+                    <i class="bi bi-trash"></i> Usuń użytkownika
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

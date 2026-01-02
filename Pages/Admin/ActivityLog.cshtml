@@ -1,0 +1,53 @@
+﻿@page
+@model CB_Zad1.Pages.Admin.ActivityLogModel
+@{
+    ViewData["Title"] = "Dziennik zdarzeń";
+}
+
+<h3>Dziennik aktywności użytkowników</h3>
+
+<div class="card mb-3 bg-light">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <form method="post" asp-page-handler="UpdateSettings" class="d-flex align-items-center">
+                    <div class="form-check form-switch me-3">
+                        <input class="form-check-input" type="checkbox" asp-for="IsLoggingEnabled" id="loggingSwitch">
+                        <label class="form-check-label fw-bold" for="loggingSwitch">
+                            Zapisuj aktywności użytkowników
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">Zapisz ustawienie</button>
+                </form>
+            </div>
+            <div class="col-md-6 text-end">
+                <form method="post" asp-page-handler="DeleteLogs" onsubmit="return confirm('Czy na pewno usunąć wszystkie logi?');">
+                    <button type="button" class="btn btn-outline-secondary" disabled>Pobierz listę (PDF/CSV)</button>
+                    <button type="submit" class="btn btn-danger">Usuń aktywności ✖</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+    <tr>
+        <th>Użytkownik</th>
+        <th>Data</th>
+        <th>Akcja</th>
+        <th>Opis</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model.Activities)
+    {
+        <tr>
+            <td>@item.UserName</td>
+            <td>@item.ActivityDate</td>
+            <td>@item.Action</td>
+            <td>@item.Description</td>
+        </tr>
+    }
+    </tbody>
+</table>
