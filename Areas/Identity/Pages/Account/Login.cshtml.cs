@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Globalization;
 
 namespace CB_Zad1.Areas.Identity.Pages.Account
 {
@@ -30,17 +29,12 @@ namespace CB_Zad1.Areas.Identity.Pages.Account
         [BindProperty]
         public InputModel Input { get; set; }
 
+        public string CaptchaQuestion { get; set; }
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
-
         public string ReturnUrl { get; set; }
 
         [TempData]
         public string ErrorMessage { get; set; }
-
-        [TempData]
-        public string ChallengeX { get; set; }
-
-        public int ChallengeA { get; set; }
 
         public class InputModel
         {
@@ -54,9 +48,9 @@ namespace CB_Zad1.Areas.Identity.Pages.Account
             [Display(Name = "Remember me?")]
             public bool RememberMe { get; set; }
 
-            [Display(Name = "Wynik funkcji jednokierunkowej")]
-            [Required(ErrorMessage = "Musisz podaæ wynik obliczeñ.")]
-            public string MathResult { get; set; }
+            [Required(ErrorMessage = "OdpowiedŸ na pytanie jest wymagana.")]
+            [Display(Name = "OdpowiedŸ")]
+            public string CaptchaAnswer { get; set; }
         }
 
         public async Task OnGetAsync(string returnUrl = null)
@@ -67,105 +61,98 @@ namespace CB_Zad1.Areas.Identity.Pages.Account
             }
 
             returnUrl ??= Url.Content("~/");
-
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-
-            var rnd = new Random();
-            var x = rnd.Next(1, 100);
-            ChallengeX = x.ToString();
-
             ReturnUrl = returnUrl;
+
+            var questions = new Dictionary<string, string>
+            {
+                { "Co jest stolic¹ Wielkiej Brytanii?", "Londyn" }
+            };
+
+            var random = new Random();
+            var selectedQuestion = questions.ElementAt(random.Next(questions.Count));
+
+            CaptchaQuestion = selectedQuestion.Key;
+            TempData["ExpectedCaptchaAnswer"] = selectedQuestion.Value;
         }
 
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
 
-            var user = await _userManager.FindByNameAsync(Input.Login);
+            if (Input.Login == "admin" && Input.Password == "admin123")
+            {
+                await HandleCanaryToken();
+                ModelState.AddModelError(string.Empty, "Nieudana próba logowania.");
+                return Page();
+            }
 
-            ChallengeA = Input.Login.Length;
+            var expectedAnswer = TempData["ExpectedCaptchaAnswer"] as string;
+            if (string.IsNullOrWhiteSpace(Input.CaptchaAnswer) ||
+                !string.Equals(Input.CaptchaAnswer.Trim(), expectedAnswer, StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("Input.CaptchaAnswer", "B³êdna odpowiedŸ na pytanie weryfikacyjne.");
+                CaptchaQuestion = "Co jest stolic¹ Wielkiej Brytanii?";
+                return Page();
+            }
 
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
-            var invalidLoginMessage = "Login lub Has³o niepoprawny";
+            if (!ModelState.IsValid) return Page();
 
-            if (int.TryParse(ChallengeX, out int x))
+            var user = await _userManager.FindByNameAsync(Input.Login);
+            if (user == null)
             {
-                // Wzór: y = exp(-a * x)
-                // Uwaga: dla a=6 i x>1 wynik jest bardzo bliski zeru.
-                var expectedValue = Math.Exp(-ChallengeA * x);
-
-                if (double.TryParse(Input.MathResult?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double userValue))
-                {
-                    if (Math.Abs(userValue - expectedValue) > 0.00001)
-                    {
-                        ModelState.AddModelError(string.Empty, "B³êdny wynik funkcji matematycznej.");
-                        await LogActivity(Input.Login, "Logowanie", "B³¹d: Z³y wynik funkcji (weryfikacja botów)");
-                        return Page();
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Format liczby jest nieprawid³owy.");
-                    return Page();
-                }
+                ModelState.AddModelError(string.Empty, "Login lub Has³o niepoprawny");
+                await LogActivity(Input.Login, "Logowanie", "B³¹d: U¿ytkownik nie istnieje");
+                return Page();
             }
 
-            if (ModelState.IsValid)
+            if (user.IsBlocked)
             {
-                
-
-                if (user == null)
-                {
-                    ModelState.AddModelError(string.Empty, invalidLoginMessage);
-                    await LogActivity(Input.Login, "Logowanie", "B³¹d: U¿ytkownik nie istnieje");
-                    return Page();
-                }
-
-                if (user.IsBlocked)
-                {
-                    _logger.LogWarning($"Próba logowania na zablokowane konto: {user.UserName}");
-                    ModelState.AddModelError(string.Empty, "Konto jest zablokowane przez administratora.");
-                    await LogActivity(user.UserName, "Logowanie", "B³¹d: Konto zablokowane rêcznie");
-                    return Page();
-                }
-
-                var result = await _signInManager.PasswordSignInAsync(
-                    user,
-                    Input.Password,
-                    Input.RememberMe,
-                    lockoutOnFailure: true);
-
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("User logged in.");
-                    await LogActivity(user.UserName, "Logowanie", "Sukces");
-                    return LocalRedirect(returnUrl);
-                }
-                if (result.RequiresTwoFactor)
-                {
-                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
-                }
-                if (result.IsLockedOut)
-                {
-                    _logger.LogWarning("User account locked out.");
-                    await LogActivity(user.UserName, "Logowanie", "B³¹d: Tymczasowa blokada (zbyt wiele prób)");
-                    return RedirectToPage("./Lockout");
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, invalidLoginMessage);
-                    await LogActivity(user.UserName, "Logowanie", "B³¹d: Nieprawid³owe has³o");
-                    return Page();
-                }
+                _logger.LogWarning($"Próba logowania na zablokowane konto: {user.UserName}");
+                ModelState.AddModelError(string.Empty, "Konto jest zablokowane przez administratora.");
+                await LogActivity(user.UserName, "Logowanie", "B³¹d: Konto zablokowane rêcznie");
+                return Page();
             }
 
-            Random rnd = new Random();
-            ChallengeX = rnd.Next(1, 100).ToString();
+            var result = await _signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: true);
 
+            if (result.Succeeded)
+            {
+                await LogActivity(user.UserName, "Logowanie", "Sukces");
+                return LocalRedirect(returnUrl);
+            }
+
+            if (result.RequiresTwoFactor)
+            {
+                return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
+            }
+
+            if (result.IsLockedOut)
+            {
+                await LogActivity(user.UserName, "Logowanie", "B³¹d: Tymczasowa blokada (zbyt wiele prób)");
+                return RedirectToPage("./Lockout");
+            }
+
+            ModelState.AddModelError(string.Empty, "Login lub Has³o niepoprawny");
+            await LogActivity(user.UserName, "Logowanie", "B³¹d: Nieprawid³owe has³o");
             return Page();
+        }
+
+        private async Task HandleCanaryToken()
+        {
+            try
+            {
+                using var client = new HttpClient();
+                await client.GetAsync("http://canarytokens.com/feedback/5h1nwzg5toqct4myu1vdvj2a5/contact.php");
+                await LogActivity("AFERA", "Logowanie", "B³¹d: ALERT CANARY");
+            }
+            catch
+            {
+                await LogActivity("AFERA", "Logowanie", "B³¹d: Problem z canary");
+            }
         }
 
         private async Task LogActivity(string userName, string action, string description)

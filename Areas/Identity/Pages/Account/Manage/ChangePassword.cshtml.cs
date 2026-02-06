@@ -1,9 +1,6 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
 using System.ComponentModel.DataAnnotations;
 using CB_Zad1.Models;
+using CB_Zad1.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -15,60 +12,45 @@ namespace CB_Zad1.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger<ChangePasswordModel> _logger;
+        private readonly IReCaptchaService _reCaptchaService;
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
 
         public ChangePasswordModel(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
-            ILogger<ChangePasswordModel> logger)
+            ILogger<ChangePasswordModel> logger,
+            IReCaptchaService reCaptchaService,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _reCaptchaService = reCaptchaService;
+            _httpClient = httpClientFactory.CreateClient();
+            _configuration = configuration;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [TempData]
         public string StatusMessage { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [DataType(DataType.Password)]
             [Display(Name = "Current password")]
             public string OldPassword { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "New password")]
             public string NewPassword { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [DataType(DataType.Password)]
             [Display(Name = "Confirm new password")]
             [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
@@ -94,6 +76,16 @@ namespace CB_Zad1.Areas.Identity.Pages.Account.Manage
 
         public async Task<IActionResult> OnPostAsync()
         {
+            var recaptchaResponse = Request.Form["g-recaptcha-response"];
+            var userIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var isCaptchaValid = await _reCaptchaService.VerifyAsync(recaptchaResponse, userIp);
+
+            if (!isCaptchaValid)
+            {
+                ModelState.AddModelError(string.Empty, "reCAPTCHA verification failed.");
+                return Page();
+            }
+
             if (!ModelState.IsValid)
             {
                 return Page();
@@ -106,8 +98,15 @@ namespace CB_Zad1.Areas.Identity.Pages.Account.Manage
             }
 
             var changePasswordResult = await _userManager.ChangePasswordAsync(user, Input.OldPassword, Input.NewPassword);
+
             if (!changePasswordResult.Succeeded)
             {
+                var canaryUrl = _configuration["CanaryTokens:PasswordChangeAlertUrl"];
+                if (!string.IsNullOrEmpty(canaryUrl))
+                {
+                    await _httpClient.GetAsync(canaryUrl);
+                }
+
                 foreach (var error in changePasswordResult.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -116,12 +115,11 @@ namespace CB_Zad1.Areas.Identity.Pages.Account.Manage
             }
 
             user.MustChangePasswordOnNextLogin = false;
-            user.PasswordExpirationDate = null; 
+            user.PasswordExpirationDate = null;
 
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
-                _logger.LogError($"Nie uda³o siê zresetowaæ flagi zmiany has³a dla u¿ytkownika {user.UserName}.");
                 foreach (var error in updateResult.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -130,9 +128,8 @@ namespace CB_Zad1.Areas.Identity.Pages.Account.Manage
             }
 
             await _signInManager.RefreshSignInAsync(user);
-
             _logger.LogInformation("User changed their password successfully.");
-            StatusMessage = "Your password has been changed.";
+            StatusMessage = "Your password has been changed";
 
             return RedirectToPage();
         }

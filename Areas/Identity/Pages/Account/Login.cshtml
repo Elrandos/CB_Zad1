@@ -28,33 +28,31 @@
 
                 <div class="card mb-3 border-primary">
                     <div class="card-body bg-light">
-                        <h5 class="card-title text-primary" style="font-size: 1rem;">Jednorazowe hasło</h5>
-                        <p class="card-text mb-1">
-                            Wzór: <code>exp(-a * x)</code>
+                        <h5 class="card-title text-primary" style="font-size: 1rem;">Weryfikacja bezpieczeństwa</h5>
+                        <p class="card-text mb-2">
+                            <strong>@Model.CaptchaQuestion</strong>
                         </p>
-                        <p class="card-text">
-                            <strong>x = @Model.ChallengeX</strong><br />
-                            <strong>a = @Model.ChallengeA</strong>
-                        </p>
-
                         <div class="form-floating">
-                            <input asp-for="Input.MathResult" class="form-control" autocomplete="off" placeholder="Wynik" />
-                            <label asp-for="Input.MathResult">Wpisz wynik y</label>
-                            <span asp-validation-for="Input.MathResult" class="text-danger"></span>
+                            <input asp-for="Input.CaptchaAnswer" class="form-control" autocomplete="off" placeholder="Odpowiedź" />
+                            <label asp-for="Input.CaptchaAnswer">Twoja odpowiedź</label>
+                            <span asp-validation-for="Input.CaptchaAnswer" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
+
                 <div class="checkbox mb-3">
                     <label asp-for="Input.RememberMe" class="form-label">
                         <input class="form-check-input" asp-for="Input.RememberMe" />
                         @Html.DisplayNameFor(m => m.Input.RememberMe)
                     </label>
                 </div>
+
                 <div>
                     <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Zaloguj</button>
                 </div>
-                <div>
-                    <p class="mt-2">
+
+                <div class="mt-3">
+                    <p>
                         <a id="forgot-password" asp-page="./ForgotPassword">Zapomniałeś hasła?</a>
                     </p>
                     <p>
@@ -74,7 +72,7 @@
                 {
                     <div>
                         <p>
-                            There are no external authentication services configured.
+                            Brak skonfigurowanych zewnętrznych serwisów uwierzytelniania.
                         </p>
                     </div>
                 }
